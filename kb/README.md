@@ -6,6 +6,10 @@ This directory serves as the central knowledge base for the AI Setup Agents (ASA
 
 The AI Setup Agents project aims to create a multi-agent system to assist with system configuration, setup, and quality assurance tasks.
 
+## Repository Information
+
+*   **GitHub URL:** https://github.com/1kace/ai-setup-agents/
+
 ## Agent Roles and Interactions
 
 *   **Cline (ASA Architect & Orchestrator):** The primary interface for interacting with the ASA system. Responsible for:
