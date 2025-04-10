@@ -13,3 +13,10 @@ This directory contains general policies, procedures, and knowledge applicable a
 
 Referenced files:
 *   `c:/SYSDIR/ASA/kb/common/README.md` (for sensitive/environment-specific common knowledge - path may change to ABRIDER)
+
+## Agentic Behaviour Directive Artifacts (ABDAs)
+
+ABDAs are documents or configurations whose primary purpose is to guide, constrain, or improve the behavior and operational procedures of AI agents within this project. This includes:
+*   Knowledge Base (KB) files (like this one, and others within `/kb/`).
+*   Potentially, VS Code Custom Instructions (if used).
+*   Future prompt templates or specialized configuration files designed to influence agent responses or actions.
