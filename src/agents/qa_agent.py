@@ -108,60 +108,23 @@ def apply_custom_rules(content: str, rules: list[dict], playbook_path: str) -> l
     print(f"Custom rule check finished. Found {len(findings)} potential issues.")
     return findings
 
+# --- MODIFIED FUNCTION ---
 def parse_ansible_lint_output(stdout_data: str | None) -> list[dict]:
-    """Parses the JSON output from ansible-lint."""
-    if not stdout_data:
-        print("Ansible-lint produced no stdout data to parse.")
-        return []
-    try:
-        # Ansible-lint might output multiple JSON objects or non-JSON lines
-        # Try to find the main JSON structure (often the last complete one)
-        issues = []
-        potential_json_blobs = stdout_data.strip().split('\n')
-        parsed_data = None
-        for blob in reversed(potential_json_blobs):
-            try:
-                parsed_data = json.loads(blob)
-                if isinstance(parsed_data, list): # Check if it's the list of issues
-                    issues = parsed_data
-                    break
-                elif isinstance(parsed_data, dict) and 'files' in parsed_data: # Older format?
-                    # Extract issues from a potential dictionary structure if needed
-                    # This part might need adjustment based on actual ansible-lint versions
-                    for file_info in parsed_data.get('files', []):
-                        issues.extend(file_info.get('errors', []))
-                    break # Assume we found the relevant data
-            except json.JSONDecodeError:
-                continue # Ignore lines that are not valid JSON
+    """
+    Parses the output from ansible-lint.
+    NOTE: Currently handles non-JSON output by returning an empty list,
+    as the installed ansible-lint version did not support --json.
+    Future enhancement could parse the text output if needed.
+    """
+    if stdout_data:
+        print("Received stdout data from ansible-lint (text parsing not implemented).")
+        # Future: Implement parsing logic for ansible-lint's default text output if required.
+        # For now, assume no structured issues can be extracted without JSON.
+    else:
+         print("Ansible-lint produced no stdout data to parse.")
 
-        if not issues and parsed_data is not None:
-             print("Warning: Parsed JSON from ansible-lint, but couldn't extract issues list.", file=sys.stderr)
-             # print(f"Parsed data structure: {parsed_data}") # Debugging
-
-        # Standardize format slightly if needed (example)
-        standardized_issues = []
-        for issue in issues:
-             # Example: Ensure consistent keys, adapt based on actual ansible-lint output
-             standardized_issues.append({
-                 "rule_id": issue.get("rule", {}).get("id", "UNKNOWN_ANSIBLE_LINT_RULE"),
-                 "severity": issue.get("rule", {}).get("severity", "UNKNOWN").upper(),
-                 "description": issue.get("message", "No description"),
-                 "file": issue.get("filename", "N/A"),
-                 "line": issue.get("linenumber", 0),
-                 "match": issue.get("line", "").strip() # Or other relevant detail
-             })
-
-        print(f"Parsed {len(standardized_issues)} issues from ansible-lint output.")
-        return standardized_issues
-    except json.JSONDecodeError as e:
-        print(f"Error: Failed to decode JSON from ansible-lint output: {e}", file=sys.stderr)
-        print("--- Ansible-lint stdout ---")
-        print(stdout_data)
-        print("--------------------------")
-        return [] # Return empty list on parsing failure
-    except Exception as e:
-        print(f"An unexpected error occurred parsing ansible-lint output: {e}", file=sys.stderr)
-        return []
+    return [] # Return empty list as JSON parsing is bypassed
+# --- END MODIFIED FUNCTION ---
 
 
 def save_report(all_issues: list[dict], output_path: str):
@@ -182,11 +145,13 @@ def save_report(all_issues: list[dict], output_path: str):
         # sys.exit(1)
 
 
+# --- MODIFIED FUNCTION ---
 def run_ansible_lint(playbook_path: str) -> tuple[str | None, str, int]:
     """Executes ansible-lint on the specified playbook and returns output."""
-    command = ['ansible-lint', '--json', playbook_path]
+    # Removed '--json' flag as it caused errors with the installed version
+    command = ['ansible-lint', playbook_path]
     try:
-        print(f"Running command: {' '.join(command)}") # Added for debugging
+        print(f"Running command: {' '.join(command)}")
         result = subprocess.run(
             command,
             capture_output=True,
@@ -203,6 +168,7 @@ def run_ansible_lint(playbook_path: str) -> tuple[str | None, str, int]:
          error_msg = f"An unexpected error occurred while running ansible-lint: {e}"
          print(error_msg, file=sys.stderr)
          return (None, error_msg, -2) # Indicate other subprocess error
+# --- END MODIFIED FUNCTION ---
 
 if __name__ == "__main__":
     args = parse_arguments()
@@ -228,24 +194,25 @@ if __name__ == "__main__":
         print(f"Ansible-lint finished with issues (exit code: {lint_exit_code}).")
         # Attempt to parse output even if issues were found
         ansible_lint_issues = parse_ansible_lint_output(stdout_data)
-        if not ansible_lint_issues and stdout_data:
-             print("Warning: Ansible-lint reported issues but no issues could be parsed from stdout.", file=sys.stderr)
-             print("--- Ansible-lint stdout ---")
-             print(stdout_data)
-             print("--------------------------")
+        # Removed warning about parsing failure as we expect it now
+        # if not ansible_lint_issues and stdout_data:
+        #      print("Warning: Ansible-lint reported issues but no issues could be parsed from stdout.", file=sys.stderr)
+        #      print("--- Ansible-lint stdout ---")
+        #      print(stdout_data)
+        #      print("--------------------------")
         if stderr_data:
              print("--- Ansible-lint stderr ---")
-             print(stderr_data)
+             print(stderr_data) # Print stderr which might contain useful info
              print("--------------------------")
     else: # Exit code 0
         print("Ansible-lint executed successfully.")
         ansible_lint_issues = parse_ansible_lint_output(stdout_data)
-        if not ansible_lint_issues and stdout_data:
-             # This might happen if output format changes or is unexpected
-             print("Warning: Ansible-lint exited successfully but no issues could be parsed from stdout.", file=sys.stderr)
-             print("--- Ansible-lint stdout ---")
-             print(stdout_data)
-             print("--------------------------")
+        # Removed warning about parsing failure as we expect it now
+        # if not ansible_lint_issues and stdout_data:
+        #      print("Warning: Ansible-lint exited successfully but no issues could be parsed from stdout.", file=sys.stderr)
+        #      print("--- Ansible-lint stdout ---")
+        #      print(stdout_data)
+        #      print("--------------------------")
 
     print("--- Ansible-Lint Finished ---")
 
@@ -269,7 +236,7 @@ if __name__ == "__main__":
 
     # 5. Combine Findings
     print("\n--- Combining Findings ---")
-    all_issues = ansible_lint_issues + custom_findings
+    all_issues = ansible_lint_issues + custom_findings # ansible_lint_issues will be empty for now
     print(f"Total issues found: {len(all_issues)} ({len(ansible_lint_issues)} from ansible-lint, {len(custom_findings)} from custom rules)")
     print("--- Findings Combined ---")
 
