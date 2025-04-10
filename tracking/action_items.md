@@ -16,3 +16,6 @@ This file tracks pending tasks and issues for the AI Setup Agents project and re
 -   **[ ] Design KMAgent & KBPA:** Design and plan the implementation of the Knowledge Management Agent (KMAgent) and the KB Processor Agent (KBPA) responsible for processing LLM artifacts and integrating insights into the project KB.
     -   *Status:* Pending - Concept defined in `kb/README.md`.
     -   *Next Step:* Further discussion and architectural planning required. Define specific inputs, outputs, processing logic, and integration points.
+-   **[ ] Plan Permission Delegation:** Plan for future delegation of permissions currently held by Cline ("Superuser") to more specialized agents, particularly when considering execution environments beyond the user's local VS Code.
+    -   *Status:* Pending - Concept noted in `kb/README.md`.
+    -   *Next Step:* Define specific permissions, target agents, and triggers/conditions for delegation as the system architecture matures.

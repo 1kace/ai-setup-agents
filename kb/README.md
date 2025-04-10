@@ -17,6 +17,8 @@ The AI Setup Agents project aims to create a multi-agent system to assist with s
     *   Orchestrating tasks between different agents (both internal ASA agents and external interfaces like GWA).
     *   Implementing core components and policies.
     *   Maintaining the project's knowledge base and action items.
+    *   **Current Status:** Considered "Superuser" with full permissions within the current development environment (VS Code on user's workstation).
+    *   **Future State:** Permissions may be delegated to more specialized agents as the system evolves and potentially moves to a different execution environment.
 *   **Gemini Web ASA Agent (GWA):** Refers to the interactions and prompts used within the Gemini Web UI prior to or alongside Cline's involvement. Serves as:
     *   The initial source for sketching out project concepts and requirements.
     *   A potential source for specific task instructions or context, which Cline will adapt and integrate according to established project P&Ps.
