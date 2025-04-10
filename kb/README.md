@@ -23,6 +23,8 @@ The AI Setup Agents project aims to create a multi-agent system to assist with s
     *   **Interaction Flow:** When a task originates from GWA, Cline will perform the necessary actions and, upon completion, provide a summary message intended for the user to relay back to GWA to keep its context synchronized.
     *   The role and interaction model with GWA will be refined as the project progresses.
 *   **Internal ASA Agents (e.g., ConfigAgent, QAAgent, ArchAgent):** Specialized agents within the `src/agents/` directory designed to handle specific functions like configuration application, quality assurance checks, and architectural analysis/generation. Cline orchestrates the use of these agents.
+*   **Knowledge Management Agent (KMAgent) (Proposed):** Future agent responsible for overseeing the project's knowledge base, potentially managing the KBPA.
+*   **KB Processor Agent (KBPA) (Proposed):** Future agent specialized in processing artifacts (e.g., conversation logs, prompts) from various LLM UIs (GWA, Claude, ChatGPT, etc.) to identify and integrate valuable concepts or requirements into the structured project KB. May utilize common and task-specific embeddings.
 
 ## GWA Interaction Procedure
 

@@ -13,3 +13,6 @@ This file tracks pending tasks and issues for the AI Setup Agents project and re
 -   **[ ] Install ansible-lint on ssca02echob:** Install `ansible-lint` in the Python virtual environment within the project directory on the `ssca02echob` Ubuntu sandbox.
     -   *Status:* Pending - Deferred until Knowledge Management (KM) / P&P structure is finalized and implemented. Requires connecting VS Code to the `ssca02echob` SSH session with the project folder opened as a workspace.
     -   *Next Step:* Execute installation steps outlined in previous task context once KM setup is complete and the correct VS Code environment is active.
+-   **[ ] Design KMAgent & KBPA:** Design and plan the implementation of the Knowledge Management Agent (KMAgent) and the KB Processor Agent (KBPA) responsible for processing LLM artifacts and integrating insights into the project KB.
+    -   *Status:* Pending - Concept defined in `kb/README.md`.
+    -   *Next Step:* Further discussion and architectural planning required. Define specific inputs, outputs, processing logic, and integration points.
