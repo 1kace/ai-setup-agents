@@ -31,8 +31,10 @@ The AI Setup Agents project aims to create a multi-agent system to assist with s
 ## GWA Interaction Procedure
 
 1.  User provides Cline with a prompt/task originating from GWA.
-2.  Cline executes the task, adapting as necessary based on current project state and P&Ps.
-3.  Upon task completion, Cline uses `attempt_completion` with:
+2.  Cline **verifies** the GWA prompt against the current project state, established plans, and P&Ps.
+    *   If the GWA prompt conflicts with established context or procedures (e.g., incorrect environment assumption, conflicting goals), Cline will **notify the user** of the discrepancy and recommend a course of action (e.g., correcting GWA's context, rejecting the conflicting instruction).
+    *   If the GWA prompt is consistent, Cline executes the task, adapting as necessary.
+3.  Upon task completion (or after notifying the user of a conflict), Cline uses `attempt_completion` with:
     *   A `<result>` summarizing the actions taken and their outcome.
     *   A separate, clearly marked block containing the message to be relayed back to GWA. This message should concisely inform GWA of the task completion and any relevant outcomes or state changes.
 
