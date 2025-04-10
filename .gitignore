@@ -8,3 +8,6 @@ __pycache__/
 logs/
 artifacts/
 .vscode/
+
+# Temporary files for context handoff
+.tmp/

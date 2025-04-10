@@ -1,0 +1,40 @@
+---
+# .ansible-lint
+# Configuration settings for ansible-lint
+
+# Exclude paths from linting
+exclude_paths:
+  - .venv/  # Exclude virtual environment directories
+  - .git/
+  - .tmp/
+
+# List of rules to skip
+# See https://ansible-lint.readthedocs.io/en/latest/rules/#default-rules
+skip_list:
+  - experimental  # Skip experimental rules for now
+  - yaml          # Start with basic YAML linting disabled, can enable later if needed
+  # Add specific rule IDs here if necessary, e.g., 'command-instead-of-module'
+
+# Enforce specific rules (optional, useful if default rules are too broad)
+# enable_list:
+#   - var-naming  # Example: Enforce variable naming conventions
+
+# Configure specific rules (optional)
+# rules:
+#   line-length: { max: 120 } # Example: Set max line length
+
+# Verbosity level (0-2)
+verbosity: 1
+
+# Use colorized output
+colored: true
+
+# Warn about potentially problematic constructs
+warn_list:
+  - command-instead-of-shell # Prefer shell module over command when args contain jinja2
+  - deprecated-module
+  - no-handler
+  - risky-file-permissions
+
+# Define variable naming patterns (example)
+# var_naming_pattern: "^[a-z_][a-z0-9_]*$"

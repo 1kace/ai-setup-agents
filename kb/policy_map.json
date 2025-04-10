@@ -1,0 +1,10 @@
+{
+  "policyMappings": [
+    {
+      "agent": "ConfigAgent",
+      "taskKeyword": "initial_device_setup",
+      "description": "Standard procedure for setting up a new device environment.",
+      "procedureFile": "kb/config_agent/procedures/initial_device_setup.md"
+    }
+  ]
+}
