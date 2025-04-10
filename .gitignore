@@ -1,0 +1,10 @@
+# Python standard exclusions
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Project-specific exclusions
+logs/
+artifacts/
+.vscode/

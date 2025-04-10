@@ -1,0 +1,14 @@
+[
+  {
+    "id": "CUSTOM001",
+    "pattern": "password:",
+    "description": "Potential hardcoded password detected.",
+    "severity": "HIGH"
+  },
+  {
+    "id": "CUSTOM002",
+    "pattern": "mode:\\s*0?777",
+    "description": "Insecure permission mode 777 found.",
+    "severity": "MEDIUM"
+  }
+]

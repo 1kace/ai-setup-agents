@@ -1,0 +1,20 @@
+{
+  "issues": [
+    {
+      "rule_id": "CUSTOM001",
+      "severity": "HIGH",
+      "description": "Potential hardcoded password detected.",
+      "file": "test_playbook.yml",
+      "line": 8,
+      "match": "db_password: \"insecure_password:\""
+    },
+    {
+      "rule_id": "CUSTOM002",
+      "severity": "MEDIUM",
+      "description": "Insecure permission mode 777 found.",
+      "file": "test_playbook.yml",
+      "line": 20,
+      "match": "mode: 0777 # Insecure mode"
+    }
+  ]
+}

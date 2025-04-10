@@ -1,0 +1,24 @@
+---
+- name: Test Playbook for QA Agent
+  hosts: localhost
+  gather_facts: no
+
+  vars:
+    # Trigger CUSTOM001
+    db_password: "insecure_password:"
+
+  tasks:
+    # Trigger ansible-lint (e.g., no-changed-when)
+    - name: Run a shell command
+      shell: echo "Running command"
+
+    # Trigger CUSTOM002
+    - name: Set insecure file permissions
+      file:
+        path: /tmp/insecure_file.txt
+        state: touch
+        mode: 0777 # Insecure mode
+
+    - name: Another task
+      debug:
+        msg: "This is another task."
