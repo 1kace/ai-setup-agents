@@ -20,8 +20,17 @@ The AI Setup Agents project aims to create a multi-agent system to assist with s
 *   **Gemini Web ASA Agent (GWA):** Refers to the interactions and prompts used within the Gemini Web UI prior to or alongside Cline's involvement. Serves as:
     *   The initial source for sketching out project concepts and requirements.
     *   A potential source for specific task instructions or context, which Cline will adapt and integrate according to established project P&Ps.
+    *   **Interaction Flow:** When a task originates from GWA, Cline will perform the necessary actions and, upon completion, provide a summary message intended for the user to relay back to GWA to keep its context synchronized.
     *   The role and interaction model with GWA will be refined as the project progresses.
 *   **Internal ASA Agents (e.g., ConfigAgent, QAAgent, ArchAgent):** Specialized agents within the `src/agents/` directory designed to handle specific functions like configuration application, quality assurance checks, and architectural analysis/generation. Cline orchestrates the use of these agents.
+
+## GWA Interaction Procedure
+
+1.  User provides Cline with a prompt/task originating from GWA.
+2.  Cline executes the task, adapting as necessary based on current project state and P&Ps.
+3.  Upon task completion, Cline uses `attempt_completion` with:
+    *   A `<result>` summarizing the actions taken and their outcome.
+    *   A separate, clearly marked block containing the message to be relayed back to GWA. This message should concisely inform GWA of the task completion and any relevant outcomes or state changes.
 
 ## Knowledge Base Structure
 
