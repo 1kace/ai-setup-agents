@@ -26,9 +26,6 @@ skip_list:
 # Verbosity level (0-2)
 verbosity: 1
 
-# Use colorized output
-colored: true
-
 # Warn about potentially problematic constructs
 warn_list:
   - command-instead-of-shell # Prefer shell module over command when args contain jinja2
