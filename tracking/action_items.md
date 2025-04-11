@@ -23,5 +23,5 @@ This file tracks pending tasks and issues for the AI Setup Agents project and re
     -   *Status:* Pending - Observed multiple times during `ansible-lint` / `qa_agent.py` testing.
     -   *Next Step:* Monitor future EB session tasks. If it persists, consider simplifying command chains, checking SSH extension logs/behavior, or adding more robust error handling within agent scripts run remotely.
 -   **[ ] Investigate Ansible Locale Issue on ssca02echob:** Determine the root cause of the persistent "unsupported locale setting" error encountered by Ansible tools (`ansible-lint`, `ansible-config`) on `ssca02echob`, even after system locale generation and explicit environment variable setting.
-    -   *Status:* Pending - Standard fixes (locale-gen, update-locale, export LANG/LC_ALL, subprocess env) were ineffective for Ansible tools.
-    -   *Next Step:* Further investigation needed. Could involve checking specific Ansible/Python versions, system library dependencies, Ansible configuration files, or potentially a system reboot post-locale generation. For now, `qa_agent.py` has been updated to bypass the error.
+    -   *Status:* **Deferred** - Standard fixes were ineffective. `qa_agent.py` now bypasses the error. `ansible-lint` integration is currently non-functional on `ssca02echob`.
+    -   *Next Step:* Revisit if deploying to a different environment or if deeper system investigation on `ssca02echob` becomes feasible. Current focus shifted to enhancing the custom rules engine of `QAAgent`.
