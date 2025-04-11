@@ -4,12 +4,14 @@ This file tracks pending tasks and issues for the AI Setup Agents project and re
 
 ## Open Items
 
--   **[ ] Migrate C:\SYSDIR Contents:** Instruct user to move the contents of the legacy `C:\SYSDIR` directory to the new standard location (`%USERPROFILE%\Documents\SYSDIR`) on the Windows machine at an appropriate time.
-    -   *Status:* Pending - Requires user action.
-    -   *Next Step:* Provide instructions to the user when system configuration tasks involving `SYSDIR` are being performed.
+-   **[X] Migrate C:\SYSDIR Contents:** User moved contents of the legacy `C:\SYSDIR` directory to `C:\Users\mhadmin\Documents\ABRIDER`.
+    -   *Status:* Completed (User performed action 2025-04-10).
 -   **[ ] Remove Empty C:\SYSDIR:** After confirming contents have been migrated, instruct user to remove the now-empty legacy `C:\SYSDIR` directory.
-    -   *Status:* Pending - Depends on migration completion.
-    -   *Next Step:* Provide instructions after the migration action item is completed.
+    -   *Status:* Ready - Migration complete.
+    -   *Next Step:* Instruct user to verify `C:\SYSDIR` is empty and then remove it (e.g., using `rmdir C:\SYSDIR` in an admin prompt).
+-   **[ ] Secure ABRIDER Folder Permissions:** Investigate and apply appropriate permissions to the `C:\Users\mhadmin\Documents\ABRIDER` folder to restrict access (e.g., only to `mhadmin` and `Administrators`).
+    -   *Status:* Pending - New requirement based on user feedback.
+    -   *Next Step:* Research and provide `icacls` or PowerShell commands to set desired permissions.
 -   **[ ] Install ansible-lint on ssca02echob:** Install `ansible-lint` in the Python virtual environment within the project directory on the `ssca02echob` Ubuntu sandbox.
     -   *Status:* Pending - Deferred until Knowledge Management (KM) / P&P structure is finalized and implemented. Requires connecting VS Code to the `ssca02echob` SSH session with the project folder opened as a workspace.
     -   *Next Step:* Execute installation steps outlined in previous task context once KM setup is complete and the correct VS Code environment is active.
@@ -25,3 +27,18 @@ This file tracks pending tasks and issues for the AI Setup Agents project and re
 -   **[ ] Investigate Ansible Locale Issue on ssca02echob:** Determine the root cause of the persistent "unsupported locale setting" error encountered by Ansible tools (`ansible-lint`, `ansible-config`) on `ssca02echob`, even after system locale generation and explicit environment variable setting.
     -   *Status:* **Deferred** - Standard fixes were ineffective. `qa_agent.py` now bypasses the error. `ansible-lint` integration is currently non-functional on `ssca02echob`.
     -   *Next Step:* Revisit if deploying to a different environment or if deeper system investigation on `ssca02echob` becomes feasible. Current focus shifted to enhancing the custom rules engine of `QAAgent`.
+-   **[ ] Deploy & Test `qa_agent.py` v1.1 (Refined Parsing):** The latest version of `qa_agent.py` (with refined ansible-lint parsing) needs to be pushed to `origin/master` and then tested on `ssca02echob`.
+    -   *Status:* **Blocked** - Pending resolution of Git push/pull issues or reliable Git integration for Cline.
+    -   *Next Step:* Once Git push is confirmed working (either manually or via new integration), instruct EB to `git pull origin master` and run the final verification test.
+-   **[ ] Implement Reliable Git Integration for Cline:** Investigate and implement a method for Cline to reliably perform Git operations (add, commit, pull, push) without requiring manual user intervention for every step.
+    -   *Status:* Pending - Current custom MCP server lacks necessary tools (`git_pull`), and manual process is unreliable/undesirable.
+    -   *Next Step:* Evaluate options:
+        -   Enhance the custom `github-mcp-server` to include `git_pull` and potentially conflict resolution logic (complex).
+        -   Install and configure a VS Code extension like `vscode-as-mcp-server` (as researched in `kb/mcp/vscode_github_integration.md`) to expose Git tools via MCP.
+        -   Explore other potential solutions (e.g., dedicated Git CLI tools accessible via `execute_command` if authentication can be handled non-interactively).
+
+## Recommended Next Steps
+
+-   Focus on designing the KMAgent & KBPA (see open item above).
+-   Address securing the `ABRIDER` folder permissions.
+-   Instruct user to remove the empty `C:\SYSDIR`.
