@@ -19,3 +19,6 @@ This file tracks pending tasks and issues for the AI Setup Agents project and re
 -   **[ ] Plan Permission Delegation:** Plan for future delegation of permissions currently held by Cline ("Superuser") to more specialized agents, particularly when considering execution environments beyond the user's local VS Code.
     -   *Status:* Pending - Concept noted in `kb/README.md`.
     -   *Next Step:* Define specific permissions, target agents, and triggers/conditions for delegation as the system architecture matures.
+-   **[ ] Investigate EB Session Completion:** Diagnose why the Cline instance running in the remote SSH (EB/`ssca02echob`) session sometimes fails to complete its full sequence of commands/reporting, especially after script execution or errors.
+    -   *Status:* Pending - Observed multiple times during `ansible-lint` / `qa_agent.py` testing.
+    -   *Next Step:* Monitor future EB session tasks. If it persists, consider simplifying command chains, checking SSH extension logs/behavior, or adding more robust error handling within agent scripts run remotely.
