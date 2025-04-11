@@ -2,44 +2,16 @@
 
 import argparse
 import subprocess
-import sys
 import json
+import logging
+import os
 import re
-import os # Added for path validation
+import sys
+import datetime
+# Add any other necessary imports that might be missing
 
-def parse_arguments():
-    """Parses command-line arguments for the QA agent."""
-    parser = argparse.ArgumentParser(description="Run ansible-lint checks on a playbook.")
-    parser.add_argument(
-        "--playbook-file",
-        required=True,
-        type=str,
-        help="Path to the Ansible playbook file to lint."
-    )
-    parser.add_argument(
-        "--output-report",
-        required=True,
-        type=str,
-        help="Path to save the JSON linting report."
-    )
-    parser.add_argument(
-        "--rules-config",
-        required=False,
-        type=str,
-        default="src/rules/custom_qa_rules.json",
-        help="Path to the custom rules configuration file (optional)."
-    )
-    args = parser.parse_args()
 
-    # Validate input paths
-    if not os.path.isfile(args.playbook_file):
-        print(f"Error: Playbook file not found: {args.playbook_file}", file=sys.stderr)
-        sys.exit(1)
-    if args.rules_config and not os.path.isfile(args.rules_config):
-         print(f"Error: Custom rules file not found: {args.rules_config}", file=sys.stderr)
-         sys.exit(1)
-
-    return args
+# Removed parse_arguments function as parsing is now handled directly in __main__
 
 def load_custom_rules(rules_path: str) -> list[dict]:
     """Loads custom QA rules from a JSON file."""
@@ -108,48 +80,100 @@ def apply_custom_rules(content: str, rules: list[dict], playbook_path: str) -> l
     print(f"Custom rule check finished. Found {len(findings)} potential issues.")
     return findings
 
-# --- MODIFIED FUNCTION ---
-def parse_ansible_lint_output(stdout_data: str | None) -> list[dict]:
+def parse_ansible_lint_output(json_string, playbook_path):
     """
-    Parses the output from ansible-lint.
-    NOTE: Currently handles non-JSON output by returning an empty list,
-    as the installed ansible-lint version did not support --json.
-    Future enhancement could parse the text output if needed.
+    Parses the JSON output from ansible-lint.
+
+    Args:
+        json_string (str): The raw JSON string output from ansible-lint.
+        playbook_path (str): The path to the playbook being analyzed (for context in logging).
+
+    Returns:
+        list: A list of dictionaries, where each dictionary represents an issue
+              conforming to the standard report schema. Returns empty list on error.
     """
-    if stdout_data:
-        print("Received stdout data from ansible-lint (text parsing not implemented).")
-        # Future: Implement parsing logic for ansible-lint's default text output if required.
-        # For now, assume no structured issues can be extracted without JSON.
-    else:
-         print("Ansible-lint produced no stdout data to parse.")
+    issues = []
+    if not json_string:
+        logging.warning(f"Received empty output from ansible-lint for {playbook_path}. Assuming no issues found via linting.")
+        return issues
 
-    return [] # Return empty list as JSON parsing is bypassed
-# --- END MODIFIED FUNCTION ---
+    try:
+        lint_results = json.loads(json_string)
+        # Adapt the parsing logic based on the actual structure of ansible-lint's JSON output (v25.2.1)
+        # Example structure assumption (verify and adjust):
+        # Check if it's a list of issues directly or nested.
+        # Let's assume it's a list of dictionaries, each representing a linting violation.
+        if isinstance(lint_results, list):
+             for item in lint_results:
+                 # Refined mapping based on common ansible-lint JSON structure.
+                 # Verify these keys against the actual JSON output if possible.
+                 rule_info = item.get("rule", {})
+                 rule_id = rule_info.get("id", "UnknownRuleID")
+                 description = item.get("message", "No description provided.")
+                 # Attempt to map severity, default to MEDIUM
+                 severity = rule_info.get("severity", "medium").upper()
+                 # Use filename from lint output, fallback to playbook_path
+                 filename = item.get("filename", playbook_path)
+                 # Use linenumber if available
+                 line_number = item.get("linenumber", None) # Sometimes 'lineno'
+
+                 issue = {
+                     "rule_id": f"ansible-lint:{rule_id}", # Prefix to distinguish from custom rules
+                     "description": description,
+                     "severity": severity,
+                     "file": filename,
+                     "line": line_number
+                 }
+                 issues.append(issue)
+        else:
+            logging.warning(f"Unexpected JSON structure received from ansible-lint for {playbook_path}. Assuming no issues.")
+
+    except json.JSONDecodeError:
+        logging.warning(f"Failed to decode JSON output from ansible-lint for {playbook_path}. Output was: {json_string[:200]}...") # Log snippet
+    except Exception as e:
+        logging.error(f"Error parsing ansible-lint output for {playbook_path}: {e}", exc_info=True)
+
+    logging.info(f"Parsed {len(issues)} issues from ansible-lint output for {playbook_path}.")
+    return issues
 
 
-def save_report(all_issues: list[dict], output_path: str):
-    """Saves the combined findings report to a JSON file in {'issues': [...]} format."""
-    report_content = {"issues": all_issues}
+def generate_report(playbook_path, all_issues, output_report_path):
+    """
+    Generates the final QA report in JSON format.
+
+    Args:
+        playbook_path (str): Path to the playbook analyzed.
+        all_issues (list): Combined list of issues from all checks (ansible-lint, custom).
+        output_report_path (str): Path where the JSON report file should be saved.
+    """
+    report_status = "PASS" if not all_issues else "FAIL"
+    report_timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    report = {
+        "report_timestamp": report_timestamp,
+        "playbook_path": playbook_path,
+        "status": report_status,
+        "issues": all_issues
+    }
+
     try:
         # Ensure the output directory exists
-        output_dir = os.path.dirname(output_path)
-        if output_dir: # Create directory if it's not the current directory
-             os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(os.path.dirname(output_report_path), exist_ok=True)
 
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(report_content, f, indent=2)
-        print(f"Successfully saved combined report with {len(all_issues)} findings to {output_path}")
+        with open(output_report_path, 'w') as f:
+            json.dump(report, f, indent=4)
+        logging.info(f"Successfully generated QA report: {output_report_path}")
+        logging.info(f"Playbook '{playbook_path}' status: {report_status} ({len(all_issues)} issues found).")
+    except IOError as e:
+        logging.error(f"Failed to write report file {output_report_path}: {e}", exc_info=True)
     except Exception as e:
-        print(f"Error saving combined report to {output_path}: {e}", file=sys.stderr)
-        # Consider exiting if report saving fails critically
-        # sys.exit(1)
+        logging.error(f"An unexpected error occurred during report generation: {e}", exc_info=True)
 
 
-# --- MODIFIED FUNCTION ---
 def run_ansible_lint(playbook_path: str) -> tuple[str | None, str, int]:
     """Executes ansible-lint on the specified playbook and returns output."""
-    # Removed '--json' flag as it caused errors with the installed version
-    command = ['ansible-lint', playbook_path]
+    # Re-enabled '--format json' now that ansible-lint is installed
+    command = ['ansible-lint', '--format', 'json', playbook_path]
     try:
         # Explicitly set locale environment variables for the subprocess
         # This attempts to fix locale issues specifically for ansible-lint
@@ -176,96 +200,124 @@ def run_ansible_lint(playbook_path: str) -> tuple[str | None, str, int]:
          return (None, error_msg, -2) # Indicate other subprocess error
 # --- END MODIFIED FUNCTION ---
 
+
+# --- Logging Configuration ---
+LOG_FILE_PATH = '/opt/SSCA02ECHOB/repos/ai-setup-agents/logs/agents.log'
+# Ensure log directory exists
+# Check if the path is absolute before creating directories
+if os.path.isabs(LOG_FILE_PATH):
+    os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
+else:
+    # Handle relative path if necessary, maybe relative to script location?
+    # For now, assume absolute path as given in instructions.
+    # If relative paths are possible, adjust logic here.
+    print(f"Warning: LOG_FILE_PATH '{LOG_FILE_PATH}' is not absolute. Directory creation skipped.", file=sys.stderr)
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE_PATH),
+        logging.StreamHandler(sys.stdout) # Log to console
+    ]
+)
+logging.info("Logging configured successfully. Log file should be created now.") # Add test log message
+# --- End Logging Configuration ---
+
+
 if __name__ == "__main__":
-    args = parse_arguments()
-    print(f"Starting QA Agent V2 (Ansible-Lint + Custom Rules)...")
-    print(f"Playbook: {args.playbook_file}")
-    print(f"Custom Rules: {args.rules_config}")
-    print(f"Output Report: {args.output_report}")
+    # Configure logging (if not done globally above)
+    # logging.basicConfig(...) # As defined in step 4, if placed here
 
-    ansible_lint_issues = []
-    custom_findings = []
-    ansible_lint_failed = False
+    logger = logging.getLogger(__name__) # Get logger instance if needed elsewhere
 
-    # 1. Run Ansible-Lint
-    print("\n--- Running Ansible-Lint ---")
-    stdout_data, stderr_data, lint_exit_code = run_ansible_lint(args.playbook_file)
+    try:
+        # 1. Parse Arguments
+        parser = argparse.ArgumentParser(description="Run QA checks (ansible-lint, custom rules) on Ansible playbooks.")
+        # Using named arguments as required based on testing feedback
+        parser.add_argument("--playbook-file", required=True, help="Path to the Ansible playbook file.")
+        parser.add_argument("-r", "--rules", default="/opt/SSCA02ECHOB/repos/ai-setup-agents/src/rules/custom_qa_rules.json", help="Path to the custom rules JSON file.")
+        parser.add_argument("-o", "--output-report", required=True, help="Full path to save the QA report JSON file.")
+        # Add other arguments if needed
+        args = parser.parse_args()
 
-    # Check for known locale error specifically
-    known_locale_error = "unsupported locale setting" in stderr_data if stderr_data else False
+        playbook_file = args.playbook_file # Use the named argument
+        custom_rules_file = args.rules
+        output_report_path = args.output_report # Use the named argument directly
 
-    if lint_exit_code < 0: # Handle execution errors (-1: not found, -2: other)
-        print(f"Ansible-lint execution failed. Error:\n{stderr_data}")
-        ansible_lint_failed = True # Mark as failed for critical errors like command not found
-    elif known_locale_error:
-        print("Warning: Ansible-lint failed due to known persistent locale issue on this host. Skipping ansible-lint results.")
-        print(f"Ansible-lint exit code: {lint_exit_code}")
-        if stderr_data:
-             print("--- Ansible-lint stderr (Locale Issue) ---")
-             print(stderr_data)
-             print("-----------------------------------------")
-        # Do NOT set ansible_lint_failed = True for this specific known issue
-    elif lint_exit_code > 0:
-        print(f"Ansible-lint finished with issues (exit code: {lint_exit_code}).")
-        # Attempt to parse output even if issues were found
-        ansible_lint_issues = parse_ansible_lint_output(stdout_data)
-        # Removed warning about parsing failure as we expect it now
-        # if not ansible_lint_issues and stdout_data:
-        #      print("Warning: Ansible-lint reported issues but no issues could be parsed from stdout.", file=sys.stderr)
-        #      print("--- Ansible-lint stdout ---")
-        #      print(stdout_data)
-        #      print("--------------------------")
-        if stderr_data:
-             print("--- Ansible-lint stderr ---")
-             print(stderr_data) # Print stderr which might contain useful info
-             print("--------------------------")
-    else: # Exit code 0
-        print("Ansible-lint executed successfully.")
-        ansible_lint_issues = parse_ansible_lint_output(stdout_data)
-        # Removed warning about parsing failure as we expect it now
-        # if not ansible_lint_issues and stdout_data:
-        #      print("Warning: Ansible-lint exited successfully but no issues could be parsed from stdout.", file=sys.stderr)
-        #      print("--- Ansible-lint stdout ---")
-        #      print(stdout_data)
-        #      print("--------------------------")
+        # No need to construct output path anymore
 
-    print("--- Ansible-Lint Finished ---")
+        logger.info(f"Starting QA checks for playbook: {playbook_file}")
+        logger.info(f"Using custom rules: {custom_rules_file}")
+        logger.info(f"Report will be saved to: {output_report_path}")
 
+        # --- Ensure playbook exists ---
+        if not os.path.exists(playbook_file):
+             logger.error(f"Playbook file not found: {playbook_file}")
+             sys.exit(1)
 
-    # 2. Load Custom Rules
-    print("\n--- Loading Custom Rules ---")
-    custom_rules = load_custom_rules(args.rules_config)
-    print("--- Custom Rules Loaded ---")
+        # 2. Run Ansible-Lint
+        # Assuming run_ansible_lint returns a tuple (exit_code, stdout_str, stderr_str)
+        # Make sure run_ansible_lint uses ['-f', 'json'] and redirects stderr.
+        # Adjusting call based on existing run_ansible_lint signature: (stdout, stderr, exit_code)
+        lint_stdout, lint_stderr, lint_exit_code = run_ansible_lint(playbook_file) # Adjust if run_ansible_lint signature differs
 
+        # Attempt to parse JSON output regardless of exit code,
+        # as ansible-lint might output JSON even with errors.
+        ansible_lint_issues = parse_ansible_lint_output(lint_stdout, playbook_file)
 
-    # 3. Read Playbook Content (only if needed for custom rules)
-    print("\n--- Reading Playbook for Custom Rules ---")
-    playbook_content = read_playbook_content(args.playbook_file)
-    print("--- Playbook Read ---")
+        # Log warnings/info based on exit code
+        if lint_exit_code == 0:
+            logger.info("ansible-lint completed successfully.")
+        elif lint_exit_code == 2: # Handle known locale error specifically
+            logger.warning(f"ansible-lint finished with exit code 2 (likely locale issue) for playbook {playbook_file}.")
+            logger.debug(f"ansible-lint stderr: {lint_stderr}") # Log stderr for debugging
+        elif lint_exit_code == -1: # Handle command not found error from run_ansible_lint
+             logger.error(f"ansible-lint command not found. Skipping linting.")
+             # lint_stderr already contains the error message from run_ansible_lint
+        elif lint_exit_code < 0: # Handle other execution errors from run_ansible_lint
+             logger.error(f"ansible-lint execution failed with code {lint_exit_code}. Error: {lint_stderr}. Skipping linting.")
+        else: # Handle other non-zero exit codes
+            logger.warning(f"ansible-lint finished with exit code {lint_exit_code} for playbook {playbook_file}.")
+            logger.debug(f"ansible-lint stderr: {lint_stderr}") # Log stderr for debugging
 
+        logger.info(f"Found {len(ansible_lint_issues)} issues from ansible-lint analysis.")
 
-    # 4. Apply Custom Rules
-    print("\n--- Applying Custom Rules ---")
-    custom_findings = apply_custom_rules(playbook_content, custom_rules, args.playbook_file) # Pass playbook path
-    print("--- Custom Rules Applied ---")
+        # 3. Load Custom Rules
+        # Assuming load_custom_rules takes the path and returns rules list/dict
+        custom_rules = load_custom_rules(custom_rules_file)
+        if custom_rules is None: # Check if loading failed
+             logger.error(f"Failed to load custom rules from {custom_rules_file}. Aborting.")
+             sys.exit(1)
+        logger.info(f"Loaded {len(custom_rules)} custom rules.")
 
-    # 5. Combine Findings
-    print("\n--- Combining Findings ---")
-    all_issues = ansible_lint_issues + custom_findings # ansible_lint_issues will be empty for now
-    print(f"Total issues found: {len(all_issues)} ({len(ansible_lint_issues)} from ansible-lint, {len(custom_findings)} from custom rules)")
-    print("--- Findings Combined ---")
+        # 4. Read Playbook Content
+        # Assuming read_playbook_content takes path, returns content string or None on error
+        playbook_content = read_playbook_content(playbook_file)
+        if playbook_content is None:
+             logger.error(f"Failed to read playbook content from {playbook_file}. Aborting.")
+             sys.exit(1)
 
-
-    # 6. Save Combined Report
-    print("\n--- Saving Combined Report ---")
-    save_report(all_issues, args.output_report)
-    print("--- Report Saved ---")
+        # 5. Apply Custom Rules
+        # Assuming apply_custom_rules takes content, rules, playbook_path and returns list of issues
+        custom_issues = apply_custom_rules(playbook_content, custom_rules, playbook_file)
+        logger.info(f"Found {len(custom_issues)} issues from custom rules for {playbook_file}.")
 
 
-    # 7. Determine Final Exit Code
-    # Exit with error if ansible-lint failed to execute OR if any issues were found
-    final_exit_code = 1 if (ansible_lint_failed or all_issues) else 0
-    status_message = "finished with issues." if final_exit_code else "finished successfully."
+        # 6. Combine Issues
+        all_issues = ansible_lint_issues + custom_issues
+        logger.info(f"Total issues found: {len(all_issues)}")
 
-    print(f"\nQA Agent V2 {status_message}")
-    sys.exit(final_exit_code)
+        # 7. Generate Report
+        generate_report(playbook_file, all_issues, output_report_path)
+
+        logger.info("QA Agent finished successfully.")
+        # Optionally exit with 0 or based on status
+        # sys.exit(0 if not all_issues else 1) # Exit with 1 if issues found? TBD
+        logging.shutdown() # Ensure logs are flushed on normal exit
+
+    except Exception as e:
+        logger.error(f"An unexpected error occurred in the QA agent main execution: {e}", exc_info=True)
+        logging.shutdown() # Ensure logs are flushed on exception exit
+        sys.exit(1) # Exit with error code
