@@ -22,3 +22,6 @@ This file tracks pending tasks and issues for the AI Setup Agents project and re
 -   **[ ] Investigate EB Session Completion:** Diagnose why the Cline instance running in the remote SSH (EB/`ssca02echob`) session sometimes fails to complete its full sequence of commands/reporting, especially after script execution or errors.
     -   *Status:* Pending - Observed multiple times during `ansible-lint` / `qa_agent.py` testing.
     -   *Next Step:* Monitor future EB session tasks. If it persists, consider simplifying command chains, checking SSH extension logs/behavior, or adding more robust error handling within agent scripts run remotely.
+-   **[ ] Investigate Ansible Locale Issue on ssca02echob:** Determine the root cause of the persistent "unsupported locale setting" error encountered by Ansible tools (`ansible-lint`, `ansible-config`) on `ssca02echob`, even after system locale generation and explicit environment variable setting.
+    -   *Status:* Pending - Standard fixes (locale-gen, update-locale, export LANG/LC_ALL, subprocess env) were ineffective for Ansible tools.
+    -   *Next Step:* Further investigation needed. Could involve checking specific Ansible/Python versions, system library dependencies, Ansible configuration files, or potentially a system reboot post-locale generation. For now, `qa_agent.py` has been updated to bypass the error.

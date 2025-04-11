@@ -191,11 +191,20 @@ if __name__ == "__main__":
     print("\n--- Running Ansible-Lint ---")
     stdout_data, stderr_data, lint_exit_code = run_ansible_lint(args.playbook_file)
 
+    # Check for known locale error specifically
+    known_locale_error = "unsupported locale setting" in stderr_data if stderr_data else False
+
     if lint_exit_code < 0: # Handle execution errors (-1: not found, -2: other)
         print(f"Ansible-lint execution failed. Error:\n{stderr_data}")
-        ansible_lint_failed = True
-        # Decide if we should proceed with custom rules or exit
-        # For now, let's proceed but note the failure.
+        ansible_lint_failed = True # Mark as failed for critical errors like command not found
+    elif known_locale_error:
+        print("Warning: Ansible-lint failed due to known persistent locale issue on this host. Skipping ansible-lint results.")
+        print(f"Ansible-lint exit code: {lint_exit_code}")
+        if stderr_data:
+             print("--- Ansible-lint stderr (Locale Issue) ---")
+             print(stderr_data)
+             print("-----------------------------------------")
+        # Do NOT set ansible_lint_failed = True for this specific known issue
     elif lint_exit_code > 0:
         print(f"Ansible-lint finished with issues (exit code: {lint_exit_code}).")
         # Attempt to parse output even if issues were found
