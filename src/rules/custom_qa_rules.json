@@ -10,5 +10,17 @@
     "pattern": "mode:\\s*0?777",
     "description": "Insecure permission mode 777 found.",
     "severity": "MEDIUM"
+  },
+  {
+    "id": "CUSTOM003",
+    "pattern": "^\\s*#\\s*-\\s+name:",
+    "description": "Potentially commented-out Ansible task definition found (line starts '# - name:').",
+    "severity": "LOW"
+  },
+  {
+    "id": "CUSTOM004",
+    "pattern": "(shell|command):\\s+.*\\brm\\s+-rf\\b",
+    "description": "Potentially dangerous 'rm -rf' detected within shell/command task line.",
+    "severity": "HIGH"
   }
 ]
