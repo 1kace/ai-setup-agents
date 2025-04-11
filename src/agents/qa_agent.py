@@ -151,14 +151,20 @@ def run_ansible_lint(playbook_path: str) -> tuple[str | None, str, int]:
     # Removed '--json' flag as it caused errors with the installed version
     command = ['ansible-lint', playbook_path]
     try:
-        print(f"Running command: {' '.join(command)}")
+        # Explicitly set locale environment variables for the subprocess
+        # This attempts to fix locale issues specifically for ansible-lint
+        process_env = os.environ.copy()
+        process_env['LANG'] = 'en_US.UTF-8'
+        process_env['LC_ALL'] = 'en_US.UTF-8'
+        print(f"Running command: {' '.join(command)} with explicit locale env")
         result = subprocess.run(
             command,
             capture_output=True,
             text=True,
-            check=False # Don't raise exception on non-zero exit
+            check=False, # Don't raise exception on non-zero exit
+            env=process_env # Pass the modified environment
         )
-        print(f"ansible-lint finished with return code: {result.returncode}") # Added for debugging
+        print(f"ansible-lint finished with return code: {result.returncode}")
         return (result.stdout, result.stderr, result.returncode)
     except FileNotFoundError:
         error_msg = "Error: 'ansible-lint' command not found. Please ensure it is installed and in your PATH."
